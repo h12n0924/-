@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>加密资产面板 · 最终成品 v12.8</title>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-line">
+      <h1>加密资产统计系统-💰1M挑战💰</h1>
+      <div class="toolbar">
+        <button class="btn" id="btnExportAll" title="导出全部(资产+待办)">导出全部</button>
+        <button class="btn" id="btnExportAssets" title="仅导出资产">导出资产</button>
+        <button class="btn" id="btnExportTodos" title="仅导出待办">导出待办</button>
+        <input id="importFile" type="file" accept="application/json" hidden />
+        <button class="btn" id="btnImport" title="导入(会替换本地数据)">导入</button>
+        <button class="btn danger" id="btnClear" title="清除本地全部数据">清除数据</button>
+      </div>
+    </div>
+    <div class="stat-cards">
+      <div class="card">
+        <div class="label">当前日期（UTC+8）</div>
+        <input id="currentDate" type="date" class="date-input"/>
+        <button class="btn" id="btnRefresh">刷新</button>
+      </div>
+      <div class="card">
+        <div class="label">今天总资产（USDT）</div>
+        <div class="value" id="totalAssets">0.00</div>
+      </div>
+      <div class="card">
+        <div class="label">相较前日</div>
+        <div class="value" id="dayChangeText">+0.00 USDT (0.00%)</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>待办事项</h2>
+      <div class="todo-form">
+        <input id="todoTitle" placeholder="待办内容（必填）"/>
+        <input id="todoDue" type="datetime-local" class="date-input"/>
+        <select id="todoPriority">
+          <option value="normal">普通</option>
+          <option value="high">高优先级</option>
+          <option value="low">低优先级</option>
+        </select>
+        <label class="ctrl-row"><input id="todoDaily" type="checkbox"/> 每日重复</label>
+        <label class="ctrl-row"><input id="hideDone" type="checkbox"/> 隐藏已完成</label>
+        <textarea id="todoNote" rows="2" placeholder="备注（可选）"></textarea>
+        <button class="btn" id="btnAddTodo">添加待办</button>
+      </div>
+      <ul id="todoList" class="todo-list"></ul>
+    </aside>
+
+    <section class="content">
+      <section class="panel">
+        <h2>录入资产明细</h2>
+        <div class="form grid2">
+          <label>日期<input id="assetDate" type="date" class="date-input"/></label>
+          <label>来源
+            <input id="assetName" placeholder="Binance, Phantom, Ledger..." list="sourceList"/>
+            <datalist id="sourceList"></datalist>
+          </label>
+          <label>子账户（可选）
+            <input id="assetSub" placeholder="主账户 / 副账户 / 分号..." list="subList"/>
+            <datalist id="subList"></datalist>
+          </label>
+          <label>资产（搜索）
+            <div class="search-wrap" id="assetTypeDropdown">
+              <input id="assetTypeSearch" placeholder="输入：BTC, SOL, ETH..." autocomplete="off"/>
+              <div class="asset-type-options"></div>
+            </div>
+          </label>
+          <label>数量（可负数）<input id="assetAmount" type="number" step="any"/></label>
+          <label class="grid-full">备注（记录这笔变动原因）<textarea id="assetMemo" rows="2" placeholder="例如：充值、提币、套利、打新成本等；#xxx 作为子账户标签"></textarea></label>
+          <button class="btn" id="btnAdd">添加</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="pnl-head">
+          <h2>资产盈亏日历</h2>
+          <div class="pnl-tools">
+            <button class="btn" id="btnEarliest">跳到最早</button>
+            <button class="btn" id="btnPrevMonth">上一月</button>
+            <div id="pnlMonthLabel" class="pnl-month"></div>
+            <button class="btn" id="btnNextMonth">下一月</button>
+            <button class="btn" id="btnToday">回到本月</button>
+          </div>
+        </div>
+        <div class="pnl-calendar" id="pnlCalendar"></div>
+        <div class="pnl-legend">
+          <span></span>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <!-- 当日详情 -->
+  <div id="modal" class="modal">
+    <div class="modal-body">
+      <div class="modal-head">
+        <div class="modal-title">当日详情</div>
+        <button class="btn" id="modalClose">×</button>
+      </div>
+      <div id="modalDate" class="modal-date"></div>
+
+      <div class="cards">
+        <div class="card2">
+          <div class="card2-head" style="display:flex;justify-content:space-between;align-items:center">
+            <span>当日资产构成（可切换分组）</span>
+            <div class="seg">
+              <label><input type="radio" name="groupMode" value="source"> 按来源</label>
+              <label><input type="radio" name="groupMode" value="ticker"> 按币种</label>
+            </div>
+          </div>
+          <div id="modalPosGroups" class="group-list"></div>
+          <div class="sum">合计：<span id="modalTotal">0.00</span> USDT</div>
+        </div>
+        <div class="card2">
+          <div class="card2-head">当日增减操作</div>
+          <table class="table centered" id="modalOpsTable">
+            <thead><tr><th>#</th><th>来源</th><th>资产</th><th>数量</th><th>价值</th><th>备注 / 子账户</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ToDo 详情弹窗 -->
+  <div id="todoModal" class="modal">
+    <div class="modal-body">
+      <div class="modal-head">
+        <div class="modal-title">待办详情</div>
+        <button class="btn" id="todoModalClose">×</button>
+      </div>
+      <div class="form grid2">
+        <label>内容<input id="tdTitle"/></label>
+        <label>截止<input id="tdDue" type="datetime-local" class="date-input"/></label>
+        <label>优先级
+          <select id="tdPriority">
+            <option value="normal">普通</option>
+            <option value="high">高优先级</option>
+            <option value="low">低优先级</option>
+          </select>
+        </label>
+        <label class="grid-full">备注<textarea id="tdNote" rows="3"></textarea></label>
+        <div class="grid-full">
+          <button class="btn" id="tdSave">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div></div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
